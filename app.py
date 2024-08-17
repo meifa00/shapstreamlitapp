@@ -8,7 +8,7 @@ from sklearn.metrics import classification_report
 import matplotlib.pyplot as plt
 from streamlit_shap import st_shap
 
-# Load the dataset
+# Load the dataset (assuming it's in the same directory)
 customer = pd.read_csv("Customer Churn.csv")
 
 # Preprocessing
@@ -34,7 +34,7 @@ st.title("SHAP Analysis for Customer Churn")
 
 # Part 1: General SHAP Analysis
 st.header("Part 1: General SHAP Analysis")
-st.dataframe(pd.DataFrame(classification_report(y_test, y_pred, output_dict=True)).T)
+st.dataframe(classification_report(y_pred, y_test,output_dict=True))
 
 # Summary plot
 st.subheader("Summary Plot")
@@ -54,7 +54,12 @@ st.header("Part 2: Individual Input Prediction & Explanation")
 # Input fields for features
 input_data = {}
 for feature in X.columns:
-    input_data[feature] = st.number_input(f"Enter {feature}:", value=float(X_test[feature].mean()))
+    if feature in ['Call  Failure', 'Complains', 'Subscription  Length', 'Status' 'Seconds of Use',
+                   'Frequency of use', 'Frequency of SMS', 'Distinct Called Numbers', 'Age Group', 'Age']:
+        input_data[feature] = st.number_input(f"Enter {feature}:", value=int(X_test[feature].mean()), step=1)
+    else:  # For other features, keep the original input type
+        input_data[feature] = st.number_input(f"Enter {feature}:", value=X_test[feature].mean())
+
 
 # Create a DataFrame from input data
 input_df = pd.DataFrame(input_data, index=[0])
@@ -70,10 +75,19 @@ st.write(f"**Churn Probability:** {probability:.2f}")
 # SHAP explanation for the input
 shap_values_input = explainer.shap_values(input_df)
 
+
 # Force plot
 st.subheader("Force Plot")
-st_shap(shap.force_plot(explainer.expected_value[1], shap_values_input[1], input_df, matplotlib=True), height=400, width=1000)
+# fig, ax = plt.subplots()
+# shap.plots.force(explainer.expected_value[0], shap_values_input[0,:], input_df.iloc[0,:], matplotlib=True)
+st_shap(shap.force_plot(explainer.expected_value[0], shap_values_input[0], input_df), height=400, width=1000)
+
+# st.write(input_df)
+# st.pyplot(fig,bbox_inches='tight')
 
 # Decision plot
 st.subheader("Decision Plot")
-st_shap(shap.decision_plot(explainer.expected_value[1], shap_values_input[1], X_test.columns))
+# fig, ax = plt.subplots()
+# shap.decision_plot(explainer.expected_value[0], shap_values_input[0], X_test.columns)
+st_shap(shap.decision_plot(explainer.expected_value[0], shap_values_input[0], X_test.columns))
+# st.pyplot(fig)
